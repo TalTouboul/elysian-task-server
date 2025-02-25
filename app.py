@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 from pymongo import MongoClient
 from mongoengine import Document, StringField, EmailField
 from random import randint
