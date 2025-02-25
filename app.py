@@ -4,8 +4,6 @@ from pymongo import MongoClient
 from mongoengine import Document, StringField, EmailField
 from random import randint
 from email_service import send_email_via_gmail
-from google.auth.transport import requests as google_requests
-from google.oauth2 import id_token
 import os
 
 # === MONGOENGINE CONFIGURATION ===
@@ -133,89 +131,6 @@ def verify_code():
         return jsonify({'message': 'Email verified successfully!'}), 200
     else:
         return jsonify({'error': 'Invalid verification code'}), 400
-
-# === Google Auth ===
-CLIENT_ID = "555947917035-hhid3sur2k74uf16uq9390o97ku4t7ug.apps.googleusercontent.com"
-
-@app.route("/api/google_login", methods=["POST"])
-def google_login():
-    token = request.json.get("token")
-    if not token:
-        return jsonify({"error": "No token provided"}), 400
-
-    try:
-        # Verify the token using Google's library
-        id_info = id_token.verify_oauth2_token(token, google_requests.Request(), CLIENT_ID)
-        email = id_info.get("email")
-        given_name = id_info.get("given_name", "")
-        family_name = id_info.get("family_name", "")
-
-        # Check if user already exists in the database
-        existing_user = db.users.find_one({"email": email})
-        if existing_user:
-            # User exists: perform login
-            return jsonify({
-                "message": "Login successful",
-                "user": {
-                    "email": existing_user["email"],
-                    "name": existing_user.get("name", ""),
-                    "familyName": existing_user.get("familyName", "")
-                }
-            }), 200
-        else:
-            # User does not exist: register new user
-            new_user = {
-                "email": email,
-                "name": given_name,
-                "familyName": family_name,
-                # You might store an empty password or generate one automatically
-                "password": ""
-            }
-            db.users.insert_one(new_user)
-            return jsonify({
-                "message": "User registered successfully",
-                "user": new_user
-            }), 201
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
-    
-# === Facebook Auth ===
-@app.route("/api/facebook_login", methods=["POST"])
-def facebook_login():
-    data = request.get_json()
-    if not data:
-        return jsonify({"error": "No data provided"}), 400
-
-    # Extract the required fields from the frontend data.
-    email = data.get("email")
-    name = data.get("name")
-    access_token = data.get("accessToken")
-
-    if not email:
-        return jsonify({"error": "Email is required"}), 400
-
-    # Check if the user already exists.
-    existing_user = db.users.find_one({"email": email})
-    if existing_user:
-        return jsonify({
-            "message": "Login successful",
-            "user": {
-                "email": existing_user["email"],
-                "name": existing_user.get("name", ""),
-            }
-        }), 200
-    else:
-        # User does not exist: register a new user.
-        new_user = {
-            "email": email,
-            "name": name,
-            "accessToken": access_token
-        }
-        db.users.insert_one(new_user)
-        return jsonify({
-            "message": "User registered successfully",
-            "user": new_user
-        }), 201
 
 
 # === RUN APP ===
