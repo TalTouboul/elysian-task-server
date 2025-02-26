@@ -4,6 +4,7 @@ from pymongo import MongoClient
 from mongoengine import Document, StringField, EmailField
 from random import randint
 from email_service import send_email_via_gmail
+import requests
 import os
 
 # === MONGOENGINE CONFIGURATION ===
@@ -132,6 +133,30 @@ def verify_code():
     else:
         return jsonify({'error': 'Invalid verification code'}), 400
 
+# New proxy endpoint to forward GPT requests to the Node.js server
+@app.route("/gpt/get-chatgpt-response", methods=["POST"])
+def gpt_proxy():
+    try:
+        # Get JSON data from the incoming request
+        data = request.get_json()
+        email = data.get("email")
+        if not email:
+            return jsonify({"error": "Email is required"}), 400
+
+        # Define the Node.js server endpoint URL
+        # Adjust this URL as needed (e.g. if your Node.js server is hosted elsewhere)
+        nodejs_url = "https://elysian-task-nodejs-server-aycxbqhwbff5ctah.israelcentral-01.azurewebsites.net/gpt/get-chatgpt-response"
+
+        # Forward the request to the Node.js server
+        node_response = requests.post(nodejs_url, json={"email": email})
+        
+        # Return the Node.js response status and data back to the client
+        return jsonify(node_response.json()), node_response.status_code
+
+    except Exception as e:
+        # Log the error and return a 500 error response
+        print("Error in gpt_proxy:", e)
+        return jsonify({"error": str(e)}), 500
 
 # === RUN APP ===
 if __name__ == "__main__":
