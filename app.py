@@ -22,7 +22,7 @@ app = Flask(__name__, static_folder="dist")
 CORS(app, origins='*')
 
 # Use your actual MongoDB connection string
-mongo_uri = os.environ.get("MONGO_URI", "mongodb+srv://tal:tubul1497@elysian0softech0task.t83qi7t.mongodb.net/")
+mongo_uri = os.environ.get("MONGO_URI", "mongodb+srv://tal:tubul1497@elysian0softech0task.nxnzmn3.mongodb.net/")
 client = MongoClient(mongo_uri)
 db = client["elysian_db"]
 
